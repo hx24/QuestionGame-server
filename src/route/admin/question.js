@@ -39,8 +39,8 @@ router.post('/addQuestion',(req,res,next)=>{
 })
 router.post('/addQuestion',(req,res)=>{
     try {
-        const {roundId, question, answerA, answerB, answerC, answerD, correct}=req.body;
-        db.query(`INSERT INTO tb_question (roundId, question, answerA, answerB, answerC, answerD, correct) VALUES ('${roundId}', '${question}', '${answerA}', '${answerB}', '${answerC}', '${answerD}', ${correct})`,(err,data)=>{
+        const {roundId, question, answer0, answer1, answer2, answer3, correct}=req.body;
+        db.query(`INSERT INTO tb_question (roundId, question, answer0, answer1, answer2, answer3, correct) VALUES ('${roundId}', '${question}', '${answer0}', '${answer1}', '${answer2}', '${answer3}', ${correct})`,(err,data)=>{
             if(err){
                 res.status(501).json({error: {message: '数据库查询失败，请检查参数'}})
             }else{
@@ -85,9 +85,8 @@ router.post('/deleteQuestion',(req,res)=>{
 // 修改题目
 router.post('/updateQuestion',(req,res)=>{
     try {
-        const {id, roundId, question, answerA, answerB, answerC, answerD, correct}=req.body;
-        console.log(`UPDATE tb_question SET roundId='${roundId}',question='${question}',answerA='${answerA}',answerB='${answerB}',answerC='${answerC}',answerD='${answerD}',correct=${correct} WHERE ID=${id}`)
-        db.query(`UPDATE tb_question SET roundId='${roundId}',question='${question}',answerA='${answerA}',answerB='${answerB}',answerC='${answerC}',answerD='${answerD}',correct=${correct} WHERE ID=${id}`,(err,data)=>{
+        const {id, roundId, question, answer0, answer1, answer2, answer3, correct}=req.body;
+        db.query(`UPDATE tb_question SET roundId='${roundId}',question='${question}',answer0='${answer0}',answer1='${answer1}',answer2='${answer2}',answer3='${answer3}',correct=${correct} WHERE ID=${id}`,(err,data)=>{
             if(err){
                 res.status(501).json({error: {message: '数据库查询失败，请检查参数'}})
             }else{
