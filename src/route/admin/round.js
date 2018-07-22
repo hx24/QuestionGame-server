@@ -166,10 +166,13 @@ router.post('/roundDetail',(req,res)=>{
             if(err){
                 res.status(501).json({error: {message: '数据库查询失败'}})
             }else{
+                data.forEach(question => {
+                    question.answers = [question.answerA, question.answerB, question.answerC, question.answerD]
+                });
                 res.json({
                     result: {
                         ...res.roundData,
-                        question: data
+                        questions: data
                     }
                 })
             }
