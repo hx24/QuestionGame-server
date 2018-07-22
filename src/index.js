@@ -5,9 +5,10 @@ const expressStatic=require('express-static');
 const mysql=require('mysql');
 const consolidate=require('consolidate');
 const cookieParser=require('cookie-parser');
-const cookieSession=require('cookie-session');
+const session = require('express-session');
 const path=require('path');
 const cors=require('cors');
+const SessionStore = require('express-mysql-session')
 
 const server = express();
 server.listen(8000);
@@ -38,11 +39,27 @@ const db = mysql.createPool({
 server.use(bodyParser.urlencoded({extended: false}));   // 当extended为false的时候，键值对中的值就为'String'或'Array'形式，为true的时候，则可为任何数据类型。
 server.use(bodyParser.json({})); // 接受json数据
 server.use(cookieParser());
-server.use(cookieSession({
-    keys: ['aaa','bbb','ccc'],         // keys，用来加密，可指定无数个，会自动循环使用，降低可破解性
-    name: 'sess',   // 可选 指定客户端中session_id的key名
-    maxAge: 2*3600*1000  // 可选  session过期时间(2小时)
+
+var sessionOptions = {
+    host: 'localhost',
+    port: 3306,
+    user: 'root',
+    password: '123456',
+    database: 'answer'
+}
+server.use(session({
+        secret: "mySecretKey",
+        key: "question",
+        // proxy: "true",
+        resave: true,
+        rolling: true,
+        cookie:{
+            maxAge: 1*3600*1000 // default session expiration is set to 1 hour  
+        },
+        saveUninitialized: false,
+        store: new SessionStore(sessionOptions)
 }));
+
 server.set('view engine', 'html');
 server.set('views', path.join(__dirname, "./template"));  // 注意读写文件时一定要path拼接路径，直接使用相对路径不可靠。具体看笔记中1.服务器基础
 server.engine('html', consolidate.ejs);

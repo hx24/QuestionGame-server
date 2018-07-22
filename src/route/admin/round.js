@@ -12,15 +12,15 @@ const db = mysql.createPool({
 });
 
 // 获取场次列表
-router.post('/roundList',(req,res,next)=>{
+router.post('/getRoundList',(req,res,next)=>{
     const {pagesize,pageindex}=req.body;
     try {
         var sql='';
         if(pageindex&&pageindex){
             var start = (pageindex-1)*pagesize;
-            sql=`SELECT * FROM tb_round LIMIT ${start},${pagesize}`;
+            sql=`SELECT * FROM tb_round ORDER BY time DESC LIMIT ${start},${pagesize}`;
         }else{
-            sql=`SELECT * FROM tb_round`;
+            sql=`SELECT * FROM tb_round ORDER BY time DESC`;
         }
         db.query(sql,(err,data)=>{
             if(err){
@@ -38,7 +38,7 @@ router.post('/roundList',(req,res,next)=>{
         })
     }
 })
-router.post('/roundList',(req,res)=>{
+router.post('/getRoundList',(req,res)=>{
     try {
         db.query(`SELECT COUNT(ID) FROM tb_round`,(err,data)=>{
             if(err){

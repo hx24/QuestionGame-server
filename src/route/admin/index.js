@@ -12,7 +12,6 @@ const db = mysql.createPool({
 
 router.use('/login', (req,res)=>{      // 跨域的时候会先执行OPTIONS请求，若不设为use，第一个OPTIONS请求会被下面的use捕获
     const {username, password}=req.body;
-    console.log(req.session)
     if(username&&password){
         db.query(`SELECT * FROM tb_admin WHERE username='${username}' AND password='${password}'`,(err,data)=>{
             if(err){
@@ -50,9 +49,14 @@ router.use('/login', (req,res)=>{      // 跨域的时候会先执行OPTIONS请�
 router.use((req,res,next)=>{
     console.log(req.session)
     if(!req.session['admin_id']){   // 没有登陆
-        res.redirect('/login')
-        // res.status(500).send('未登录').end();
+        // res.redirect('/login')
+        res.status(403).json({
+            error: {
+                message: '未登录'
+            }
+        });
     }else{
+        req.session['admin_id']=req.session['admin_id'];
         next();   // 拦截所有的admin路由请求
     }
 })
