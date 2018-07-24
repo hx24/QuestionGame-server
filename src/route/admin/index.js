@@ -1,9 +1,11 @@
 const express=require('express');
 const mysql=require('mysql');
 const router = express.Router();
+const config = require('../../config.json');
+
 
 const db = mysql.createPool({ 
-    host: 'localhost',
+    host: config.mysql_host,
     user: 'root',
     password: '123456',
     database: 'answer'

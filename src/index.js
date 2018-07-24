@@ -8,10 +8,17 @@ const cookieParser=require('cookie-parser');
 const session = require('express-session');
 const path=require('path');
 const cors=require('cors');
-const SessionStore = require('express-mysql-session')
+const SessionStore = require('express-mysql-session');
+const config = require('./config.json');
 
 const server = express();
-server.listen(80);
+server.listen(80,error=>{
+    if (error) {
+        console.log(error)
+    }else{
+        console.log('服务启动成功，端口80');
+    }
+});
 // server.all('*', (req, res, next)=>{
 //     // res.header("Access-Control-Allow-Origin", "*");
 //     res.header("Access-Control-Allow-Origin", "http://localhost:4444"); 
@@ -24,12 +31,12 @@ server.listen(80);
 // 使用cors中间件更方便
 server.use(cors({
     credentials: true, 
-    origin: 'http://118.24.4.200:8000', // web前端服务器地址
+    origin: 'http://192.168.1.137:4444', // web前端服务器地址
     // origin: '*' // 这样会出错
 }))
 
 const db = mysql.createPool({ 
-    host: 'localhost',
+    host: config.mysql_host,
     user: 'root',
     password: '123456',
     database: 'answer'
@@ -41,7 +48,7 @@ server.use(bodyParser.json({})); // 接受json数据
 server.use(cookieParser());
 
 var sessionOptions = {
-    host: 'localhost',
+    host: config.mysql_host,
     port: 3306,
     user: 'root',
     password: '123456',
@@ -66,6 +73,8 @@ server.engine('html', consolidate.ejs);
 
 
 server.use('/admin',require('./route/admin/index'));
+server.use('/user',require('./route/user/index'));
+
 
 server.use('/',(req,res,next)=>{
     if(req.url==='/')

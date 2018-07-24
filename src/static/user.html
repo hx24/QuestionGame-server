@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Page Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+    登陆
+    <form action="/user/login" method="post">
+        手机号： <input type="number" name="phone"><br/>
+        姓名： <input type="text" name="name"><br/>
+        <input type="submit" value="提交">
+    </form>
+    <br/>
+    <br/>
+    <br/>
+
+    查询场次列表
+    <form action="/admin/roundList" method="post">
+        pagesize： <input type="number" name="pagesize"><br/>
+        pageindex： <input type="number" name="pageindex"><br/>
+        <input type="submit" value="提交">
+    </form>
+
+    <br/>
+    <br/>
+    <br/>
+
+    添加场次
+    <form action="/admin/addRound" method="post">
+        title: <input type="text" name="title"><br/>
+        reward: <input type="number" name="reward"><br/>
+        time: <input type="number" name="time"><br/>
+        <input type="submit" value="提交">
+    </form>
+
+
+    <br/>
+    <br/>
+    <br/>
+    修改场次
+    <form action="/admin/updateRound" method="post">
+        ID: <input type="text" name="ID"><br/>
+        title: <input type="text" name="title"><br/>
+        reward: <input type="number" name="reward"><br/>
+        time: <input type="number" name="time"><br/>
+        <input type="submit" value="提交">
+    </form>
+
+
+    <br/>
+    <br/>
+    <br/>
+    删除场次
+    <form action="/admin/deleteRound" method="post">
+        ID: <input type="text" name="ID"><br/>
+        <input type="submit" value="提交">
+    </form>
+
+
+    <br/>
+    <br/>
+    <br/>
+    场次详情
+    <form action="/admin/roundDetail" method="post">
+        id: <input type="text" name="id"><br/>
+        <input type="submit" value="提交">
+    </form>
+
+
+    <br/>
+    <br/>
+    <br/>
+    添加问题
+    <form action="/admin/addQuestion" method="post">
+        roundId: <input type="text" name="roundId"><br/>
+        question: <textarea name="question" cols="30" rows="10"></textarea><br/>
+        answer0: <input type="text" name="answer0"><br/>
+        answer1: <input type="text" name="answer1"><br/>
+        answer2: <input type="text" name="answer2"><br/>
+        answer3: <input type="text" name="answer3"><br/>
+        correct: <input type="number" name="correct"><br/>
+        <input type="submit" value="提交">
+    </form>
+
+
+
+    <br/>
+    <br/>
+    <br/>
+    删除问题
+    <form action="/admin/deleteQuestion" method="post">
+        id: <input type="number" name="id"><br/>
+        <input type="submit" value="提交">
+    </form>
+
+
+    <br/>
+    <br/>
+    <br/>
+    修改问题
+    <form action="/admin/updateQuestion" method="post">
+        id: <input type="text" name="id"><br/>
+        roundId: <input type="text" name="roundId"><br/>
+        question: <textarea name="question" cols="30" rows="10"></textarea><br/>
+        answer0: <input type="text" name="answer0"><br/>
+        answer1: <input type="text" name="answer1"><br/>
+        answer2: <input type="text" name="answer2"><br/>
+        answer3: <input type="text" name="answer3"><br/>
+        correct: <input type="number" name="correct"><br/>
+        <input type="submit" value="提交">
+    </form>
+</body>
+</html>
