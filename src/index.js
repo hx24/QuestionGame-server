@@ -1,4 +1,4 @@
-const express=require('express');
+﻿const express=require('express');
 const bodyParser=require('body-parser');
 const multer=require('multer');
 const expressStatic=require('express-static');
@@ -11,7 +11,7 @@ const cors=require('cors');
 const SessionStore = require('express-mysql-session')
 
 const server = express();
-server.listen(8000);
+server.listen(80);
 // server.all('*', (req, res, next)=>{
 //     // res.header("Access-Control-Allow-Origin", "*");
 //     res.header("Access-Control-Allow-Origin", "http://localhost:4444"); 
@@ -24,7 +24,7 @@ server.listen(8000);
 // 使用cors中间件更方便
 server.use(cors({
     credentials: true, 
-    origin: 'http://localhost:4444', // web前端服务器地址
+    origin: 'http://118.24.4.200:8000', // web前端服务器地址
     // origin: '*' // 这样会出错
 }))
 
@@ -64,7 +64,13 @@ server.set('view engine', 'html');
 server.set('views', path.join(__dirname, "./template"));  // 注意读写文件时一定要path拼接路径，直接使用相对路径不可靠。具体看笔记中1.服务器基础
 server.engine('html', consolidate.ejs);
 
+
 server.use('/admin',require('./route/admin/index'));
 
-
+server.use('/',(req,res,next)=>{
+    if(req.url==='/')
+    res.sendFile(path.join(__dirname, "./static/index.html"))
+    else
+    next();
+})
 server.use(expressStatic(path.join(__dirname, "./static")));
