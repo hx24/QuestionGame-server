@@ -6,5 +6,9 @@ module.exports={
         var obj=crypto.createHash('md5');   // 以md5加密
         obj.update(str + this.salt);
         return obj.degest('hex');  // 以16进制输出(一般都是16进制)
+    },
+    sendErr: (res, status, message)=>{
+        res.status(status).json({error: {message: message}});
     }
 }
+

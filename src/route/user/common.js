@@ -3,7 +3,8 @@ const express=require('express');
 const mysql=require('mysql');
 const router = express.Router();
 const config = require('../../config.json');
-const moment = require('moment')
+const moment = require('moment');
+const sendErr = require('../../lib/util').sendErr;
 
 const db = mysql.createPool({ 
     host: config.mysql_host,
@@ -13,7 +14,7 @@ const db = mysql.createPool({
     // 还有端口port(默认3308可以不写)等参数
 });
 
-// 获取场次列表
+// 获取场次 (wait.html)
 router.post('/getRound',(req,res,next)=>{
     try {
         var sql='';
@@ -72,19 +73,97 @@ router.post('/getRound',(req,res)=>{
 })
 
 
-// 添加场次
-router.post('/addRound',(req,res)=>{
+// 获取题目
+// 设定一道题10s中作答时间，查看统计结果10s，等待时间为5s，所以共20s
+router.post('/getQuestion',(req,res,next)=>{             // 检查上一题是否答对
+    const {userid, roundId, index}=req.body;
     try {
-        const {title, reward, time}=req.body;
-        db.query(`INSERT INTO tb_round (title, reward, time) VALUES ('${title}', ${reward}, ${time})`,(err,data)=>{
+        if(index===0){
+            next();
+        }else{
+            db.query(`SELECT * FROM tb_res WHERE userID='${userid}' AND questionIndex=${index-1}`,(err,data)=>{
+                if(err){
+                    sendErr(res, 501, '数据库查询失败，请检查参数');
+                }else{
+                    if (data.length===0||!data[0].correct){
+                        req.body.cant=true;
+                    }
+                    next();
+                }
+            })
+        }
+    } catch (error) {
+        console.log(error)
+        sendErr(res, 500, '服务器发生错误');
+    }
+})
+router.post('/getQuestion',(req,res,next)=>{         // 获取场次信息,根绝时间判断是否可答题
+    const {userid, roundId, index}=req.body;
+    try {
+        db.query(`SELECT * FROM tb_round WHERE ID='${roundId}'`,(err,data)=>{
             if(err){
-                res.status(501).json({error: {message: '数据库查询失败，请检查参数'}})
+                sendErr(res, 501, '数据库查询失败，请检查参数');
+            }else if (data.length===0){
+                sendErr(res, 501, '未找到该场次，请检查roundId参数');
             }else{
-                res.json({
-                    result: {message: '添加成功'}
-                })
+                var startTime = data[0].time;  
+                var timeDis = new Date().getTime()-startTime;
+                console.log(timeDis)
+                if(timeDis<index*25*1000){
+                    res.status(300).json({
+                        error: {
+                            message: '该题目尚未到放题时间，请等待'         // 未到答题时间，不放题
+                        }
+                    })
+                }else{
+                    if(timeDis>(index+1)*25*1000){   // 距该题发布已超过20s
+                        req.body.cant=true;
+                    }
+                    next();
+                }
             }
-        });
+        })
+    } catch (error) {
+        console.log(error)
+        res.status(500).json({
+            error: {
+                message: '服务器发生错误'
+            }
+        })
+    }
+})
+router.post('/getQuestion',(req,res,next)=>{         // 符合条件，可以答题
+    const {userid, roundId, index}=req.body;
+    try {
+        db.query(`SELECT * FROM tb_question WHERE roundId='${roundId}'`,(err,data)=>{
+            if(err){
+                sendErr(res, 501, '数据库查询失败，请检查参数');
+            }else if (data.length===0){
+                sendErr(res, 500, '该场次没有题目');
+            }else{
+                var question = data[index];
+                if(!question){
+                    res.json({
+                        result: {
+                            end: true,
+                            message: '已没有更多题目'
+                        }
+                    })
+                }else{
+                    res.json({
+                        result: {
+                            roundId,
+                            questionindex: index+1,
+                            questionid: question.ID,
+                            question: question.question,
+                            startsecond: 10,   // 倒计时时间，暂定10s
+                            isanswer: req.body.cant,   // 是否可以答题
+                            answers: [question.answer0, question.answer1, question.answer2, question.answer3]
+                        }
+                    })
+                }
+            }
+        })
     } catch (error) {
         console.log(error)
         res.status(500).json({
@@ -95,16 +174,46 @@ router.post('/addRound',(req,res)=>{
     }
 })
 
-// 修改场次
-router.post('/updateRound',(req,res)=>{
+
+
+
+
+// 提交答案
+router.post('/commitAnswer',(req,res,next)=>{
+    const {userid, roundId, questionId, answer} = req.body;
     try {
-        const {ID, title, reward, time}=req.body;
-        db.query(`UPDATE tb_round SET title='${title}',reward=${reward},time=${time} WHERE ID=${ID}`,(err,data)=>{
+        db.query(`SELECT * FROM tb_question WHERE ID='${questionId}'`,(err,data)=>{
             if(err){
-                res.status(501).json({error: {message: '数据库查询失败，请检查参数'}})
+                sendErr(res, 501, '数据库查询失败，请检查参数');
+            }else if(data.length===0){
+                sendErr(res, 501, '未找到该题目，请检查参数');
+            }else{
+                if(data[0].correct==answer){
+                    req.body.correct=1;
+                }else{
+                    req.body.correct=0;
+                }
+                next();
+            }
+        });
+    } catch (error) {
+        res.status(500).json({
+            error: {
+                message: '服务器发生错误'
+            }
+        })
+    }
+})
+router.post('/commitAnswer',(req,res)=>{        // 往tb_res中插入答题记录
+    const {userid, roundId, questionId, questionIndex, answer} = req.body;
+    try {
+        db.query(`INSERT INTO tb_res (ID, userID, roundID, questionID, questionIndex, selected, correct) VALUES(0, '${userid}', '${roundId}', '${questionId}', '${questionIndex}', ${answer}, ${req.body.correct} ) `,(err,data)=>{
+            if(err){
+                console.log(`INSERT INTO tb_res (ID, userID, roundID, questionID, questionIndex, selected, correct) VALUES(0, '${userid}', '${roundId}', '${questionId}', '${questionIndex}', ${answer}, ${req.body.correct} ) `)
+                sendErr(res, 501, '数据库查询失败，请检查参数');
             }else{
                 res.json({
-                    result: {message: '修改成功'}
+                    result: {success: 'OK'} // 只要提交答案成功(插入表里)，就返回OK，并不判断是否回答正确
                 })
             }
         });
@@ -116,6 +225,10 @@ router.post('/updateRound',(req,res)=>{
         })
     }
 })
+
+
+// getResult 获取答案与统计结果
+
 
 
 // 删除场次
