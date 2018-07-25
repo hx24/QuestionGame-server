@@ -19,22 +19,20 @@ server.listen(80,error=>{
         console.log('服务启动成功，端口80');
     }
 });
-server.all('*', (req, res, next)=>{
-    console.log(req.headers.origin)
-    // res.header("Access-Control-Allow-Origin", "*");
-    res.header("Access-Control-Allow-Origin", req.headers.origin); 
-    res.header('Access-Control-Allow-Methods', 'PUT, GET, POST, DELETE, OPTIONS');
-    res.header("Access-Control-Allow-Headers", "X-Requested-With");
-    res.header('Access-Control-Allow-Headers', 'Content-Type');
-    res.header('Access-Control-Allow-Credentials', 'true');//和客户端对应，必须设置以后，才能接收cookie.  但是这样设置了之后，Access-Control-Allow-Origin不可设置为* 必须指定请求的域名
-    next();
-});
-// 使用cors中间件更方便
 // server.use(cors({
 //     credentials: true, 
-//     origin: 'http://127.0.0.1:8020', // web前端服务器地址
+//     origin: 'http://192.168.1.137:4444', // web前端服务器地址
 //     // origin: '*' // 这样会出错
 // }))
+server.use(cors({
+    credentials: true,
+    origin: function (origin, callback) {   // 允许任意域名的跨域请求
+        callback(null, true)
+    }
+}))
+
+
+
 
 const db = mysql.createPool({ 
     host: config.mysql_host,

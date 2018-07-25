@@ -75,7 +75,6 @@ router.use('/login', (req,res,next)=>{
 
 
 router.use((req,res,next)=>{
-    console.log(req.session)
     if(!req.session['user_id']){   // 没有登陆
         // res.redirect('/login')
         res.status(403).json({
@@ -84,7 +83,7 @@ router.use((req,res,next)=>{
             }
         });
     }else{
-        req.session['user_id']=req.session['user_id'];
+        req.body.userid=req.session['user_id']; // 将userid挂载到body上
         next();   // 拦截所有的admin路由请求
     }
 })

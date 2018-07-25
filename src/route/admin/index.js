@@ -58,7 +58,6 @@ router.use((req,res,next)=>{
             }
         });
     }else{
-        req.session['admin_id']=req.session['admin_id'];
         next();   // 拦截所有的admin路由请求
     }
 })

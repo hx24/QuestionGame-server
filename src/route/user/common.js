@@ -3,6 +3,7 @@ const express=require('express');
 const mysql=require('mysql');
 const router = express.Router();
 const config = require('../../config.json');
+const moment = require('moment')
 
 const db = mysql.createPool({ 
     host: config.mysql_host,
@@ -13,21 +14,23 @@ const db = mysql.createPool({
 });
 
 // 获取场次列表
-router.post('/getRoundList',(req,res,next)=>{
-    const {pagesize,pageindex}=req.body;
+router.post('/getRound',(req,res,next)=>{
     try {
         var sql='';
-        if(pageindex&&pageindex){
-            var start = (pageindex-1)*pagesize;
-            sql=`SELECT * FROM tb_round ORDER BY time DESC LIMIT ${start},${pagesize}`;
-        }else{
-            sql=`SELECT * FROM tb_round ORDER BY time DESC`;
-        }
-        db.query(sql,(err,data)=>{
+        const todayStartTimeStamp = new Date(new Date().toLocaleDateString()).getTime();  // 今天0点时间戳
+        const todayEndTimeStamp = todayStartTimeStamp+24*60*60*1000;                        // 第二天0点
+
+        const nowStamp = new Date().getTime();
+
+        db.query(`SELECT * FROM tb_round WHERE time>${nowStamp} AND time<${todayEndTimeStamp} ORDER BY time ASC LIMIT 0,1`,(err,data)=>{
             if(err){
                 res.status(501).json({error: {message: '数据库查询失败'}});
             }else{
-                res.roundList=data;
+                if(data[0]){
+                    var d = new Date(data.time)
+                    data[0].time = moment(data[0].time).format('HH:mm')
+                }
+                req.body.roundData=data[0];
                 next();
             }
         });
@@ -39,16 +42,22 @@ router.post('/getRoundList',(req,res,next)=>{
         })
     }
 })
-router.post('/getRoundList',(req,res)=>{
+router.post('/getRound',(req,res)=>{
+    const {userid}=req.body;
     try {
-        db.query(`SELECT COUNT(ID) FROM tb_round`,(err,data)=>{
+        // 查询该用户的历史答题记录
+        db.query(`SELECT * FROM tb_user WHERE ID='${userid}'`,(err,data)=>{
             if(err){
                 res.status(501).json({error: {message: '数据库查询失败'}})
             }else{
                 res.json({
                     result: {
-                        count: data[0]["COUNT(ID)"],
-                        list: res.roundList
+                        round: req.body.roundData,
+                        personinfo: {
+                            ...data[0],
+                            amount: 0, 
+                            history: []  // amount 和 history 需要另外查询
+                        }
                     }
                 })
             }
