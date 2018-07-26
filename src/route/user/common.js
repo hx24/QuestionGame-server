@@ -108,7 +108,7 @@ router.post('/getQuestion',(req,res,next)=>{         // 获取场次信息,根�
             }else{
                 var startTime = data[0].time;  
                 var timeDis = new Date().getTime()-startTime;
-                console.log(timeDis)
+                if(timeDis<0)console.log(timeDis)
                 if(timeDis<index*25*1000){
                     res.status(300).json({
                         error: {
@@ -157,7 +157,7 @@ router.post('/getQuestion',(req,res,next)=>{         // 符合条件，可以答
                             questionid: question.ID,
                             question: question.question,
                             startsecond: 10,   // 倒计时时间，暂定10s
-                            isanswer: req.body.cant,   // 是否可以答题
+                            isanswer: !req.body.cant,   // 是否可以答题
                             answers: [question.answer0, question.answer1, question.answer2, question.answer3]
                         }
                     })
@@ -237,7 +237,7 @@ router.post('/getResult',(req,res,next)=>{
             }else{
                 var startTime = data[0].time;  
                 var timeDis = new Date().getTime()-startTime;
-                if(timeDis<(index*25*1000 + 10*1000)){
+                if(timeDis<(questionIndex*25*1000 + 15*1000)){
                     res.status(300).json({
                         error: {
                             message: '尚未出结果，请等待'         // 未到答题时间，不放题
@@ -280,7 +280,7 @@ router.post('/getResult',(req,res,next)=>{
 router.post('/getResult',(req,res,next)=>{
     const {roundId, questionId} = req.body;
     try {
-        db.query(`SELECT selected FROM tb_res WHERE roundID='${roundId}'`,(err,data)=>{
+        db.query(`SELECT selected FROM tb_res WHERE questionID='${questionId}'`,(err,data)=>{
             if(err){
                 sendErr(res, 501, '数据库查询失败，请检查参数');
             }else{
@@ -288,14 +288,16 @@ router.post('/getResult',(req,res,next)=>{
                     correct: req.body.correct,
                 }
                 var answerCount= [0,0,0,0];
-                data.filter(item=>(typeof item.selected)=='number');
+                data = data.filter(item=>(typeof item.selected)=='number');
                 data.forEach(item => {
                     var selected = item.selected;
-                    answerCount[selected]++
+                    answerCount[selected]++;
                 });
+                result.answerCount=answerCount;
 
-                req.body.correct = data[0].correct;
-                
+                res.json({
+                    result
+                }).end();
             }
         });
     } catch (error) {
@@ -306,6 +308,8 @@ router.post('/getResult',(req,res,next)=>{
         })
     }
 })
+
+
 
 
 
