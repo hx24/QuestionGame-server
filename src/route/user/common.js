@@ -1,18 +1,9 @@
 // 场次相关api
 const express=require('express');
-const mysql=require('mysql');
 const router = express.Router();
-const config = require('../../config.json');
 const moment = require('moment');
 const sendErr = require('../../lib/util').sendErr;
-
-const db = mysql.createPool({ 
-    host: config.mysql_host,
-    user: 'root',
-    password: '123456',
-    database: 'answer'
-    // 还有端口port(默认3308可以不写)等参数
-});
+const db = require('../../lib/util').db;
 
 // 获取场次 (wait.html)
 router.post('/getRound',(req,res,next)=>{
@@ -132,7 +123,7 @@ router.post('/getQuestion',(req,res,next)=>{         // 获取场次信息,根�
         })
     }
 })
-router.post('/getQuestion',(req,res,next)=>{         // 符合条件，可以答题
+router.post('/getQuestion',(req,res,next)=>{         // 该题目已到放题时间，可以放题
     const {userid, roundId, index}=req.body;
     try {
         db.query(`SELECT * FROM tb_question WHERE roundId='${roundId}'`,(err,data)=>{
@@ -179,8 +170,30 @@ router.post('/getQuestion',(req,res,next)=>{         // 符合条件，可以答
 
 
 // 提交答案
-router.post('/commitAnswer',(req,res,next)=>{
+router.post('/commitAnswer',(req,res,next)=>{   // 先查询用户信息，获取复活卡信息
     const {userid, roundId, questionId, answer} = req.body;
+    try {
+        db.query(`SELECT revive FROM tb_user WHERE ID='${userid}'`,(err,data)=>{
+            if(err){
+                sendErr(res, 501, '数据库查询失败，请检查参数');
+            }else if(data.length===0){
+                sendErr(res, 501, '未找到该用户，请检查参数');
+            }else{
+                req.body.revive = data[0].revive;
+                next();
+            }
+        });
+    } catch (error) {
+        console.log(error)
+        res.status(500).json({
+            error: {
+                message: '服务器发生错误'
+            }
+        })
+    }
+})
+router.post('/commitAnswer',(req,res,next)=>{
+    const {userid, roundId, revive, questionId, answer} = req.body;
     try {
         db.query(`SELECT * FROM tb_question WHERE ID='${questionId}'`,(err,data)=>{
             if(err){
@@ -190,13 +203,24 @@ router.post('/commitAnswer',(req,res,next)=>{
             }else{
                 if(data[0].correct==answer){
                     req.body.correct=1;
+                    next();
+                }else if(revive>0){     // 使用复活卡
+                    db.query(`UPDATE tb_user SET revive=${revive-1} WHERE ID='${userid}'`,(err,data)=>{
+                        if(err){
+                            sendErr(res, 501, '数据库查询失败，请检查参数');
+                        }else{
+                            req.body.correct=1;
+                            next();
+                        }
+                    })
                 }else{
                     req.body.correct=0;
+                    next();
                 }
-                next();
             }
         });
     } catch (error) {
+        console.log(error)
         res.status(500).json({
             error: {
                 message: '服务器发生错误'
@@ -205,11 +229,11 @@ router.post('/commitAnswer',(req,res,next)=>{
     }
 })
 router.post('/commitAnswer',(req,res)=>{        // 往tb_res中插入答题记录
-    const {userid, roundId, questionId, questionIndex, answer} = req.body;
+    const {userid, roundId, questionId, questionIndex, answer, correct} = req.body;
     try {
-        db.query(`INSERT INTO tb_res (ID, userID, roundID, questionID, questionIndex, selected, correct) VALUES(0, '${userid}', '${roundId}', '${questionId}', '${questionIndex}', ${answer}, ${req.body.correct} ) `,(err,data)=>{
+        db.query(`INSERT INTO tb_res (ID, userID, roundID, questionID, questionIndex, selected, correct) VALUES(0, '${userid}', '${roundId}', '${questionId}', '${questionIndex}', ${answer}, ${correct} ) `,(err,data)=>{
             if(err){
-                console.log(`INSERT INTO tb_res (ID, userID, roundID, questionID, questionIndex, selected, correct) VALUES(0, '${userid}', '${roundId}', '${questionId}', '${questionIndex}', ${answer}, ${req.body.correct} ) `)
+                console.log(`INSERT INTO tb_res (ID, userID, roundID, questionID, questionIndex, selected, correct) VALUES(0, '${userid}', '${roundId}', '${questionId}', '${questionIndex}', ${answer}, ${correct} ) `)
                 sendErr(res, 501, '数据库查询失败，请检查参数');
             }else{
                 res.json({
@@ -218,6 +242,7 @@ router.post('/commitAnswer',(req,res)=>{        // 往tb_res中插入答题记�
             }
         });
     } catch (error) {
+        console.log(error)
         res.status(500).json({
             error: {
                 message: '服务器发生错误'

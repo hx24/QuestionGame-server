@@ -1,3 +1,10 @@
 {
-    "mysql_host": "118.24.4.200"
+    "mysql_host": "118.24.4.200",
+    "mysql_config": { 
+        "host": "118.24.4.200",
+        "user": "root",
+        "password": "123456",
+        "database": "answer",
+        "port": 3306
+    }
 }

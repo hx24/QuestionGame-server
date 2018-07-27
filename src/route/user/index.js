@@ -1,16 +1,7 @@
 const express=require('express');
-const mysql=require('mysql');
 const router = express.Router();
-const config = require('../../config.json');
 const uuid = require('uuid/v1');
-
-const db = mysql.createPool({ 
-    host: config.mysql_host,
-    user: 'root',
-    password: '123456',
-    database: 'answer'
-    // 还有端口port(默认3308可以不写)等参数
-});
+const db = require('../../lib/util').db;
 
 router.use('/login', (req,res,next)=>{      // 跨域的时候会先执行OPTIONS请求，若不设为use，第一个OPTIONS请求会被下面的use捕获
     const {phone, name}=req.body;

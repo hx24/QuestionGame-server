@@ -10,6 +10,8 @@ const path=require('path');
 const cors=require('cors');
 const SessionStore = require('express-mysql-session');
 const config = require('./config.json');
+const db = require('./lib/util').db;
+
 
 const server = express();
 server.listen(80,error=>{
@@ -32,27 +34,12 @@ server.use(cors({
 }))
 
 
-
-
-const db = mysql.createPool({ 
-    host: config.mysql_host,
-    user: 'root',
-    password: '123456',
-    database: 'answer'
-    // 还有端口port(默认3308可以不写)等参数
-});
-
 server.use(bodyParser.urlencoded({extended: false}));   // 当extended为false的时候，键值对中的值就为'String'或'Array'形式，为true的时候，则可为任何数据类型。
 server.use(bodyParser.json({})); // 接受json数据
 server.use(cookieParser());
 
-var sessionOptions = {
-    host: config.mysql_host,
-    port: 3306,
-    user: 'root',
-    password: '123456',
-    database: 'answer'
-}
+var sessionOptions = config.mysql_config;
+
 server.use(session({
         secret: "mySecretKey",
         key: "question",

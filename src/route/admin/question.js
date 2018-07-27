@@ -1,17 +1,7 @@
 // 题目相关api
 const express=require('express');
-const mysql=require('mysql');
 const router = express.Router();
-const config = require('../../config.json');
-
-const db = mysql.createPool({ 
-    host: config.mysql_host,
-    user: 'root',
-    password: '123456',
-    database: 'answer'
-    // 还有端口port(默认3308可以不写)等参数
-});
-
+const db = require('../../lib/util').db;
 
 // 添加题目
 router.post('/addQuestion',(req,res,next)=>{
