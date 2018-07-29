@@ -3,7 +3,7 @@ const router = express.Router();
 const uuid = require('uuid/v1');
 const db = require('../../lib/util').db;
 
-router.use('/login', (req,res,next)=>{      // 跨域的时候会先执行OPTIONS请求，若不设为use，第一个OPTIONS请求会被下面的use捕获
+router.use('/login', (req,res,next)=>{      // 跨域的时候会先执行OPTIONS请求，若不设为use，第一个OPTIONS请求会被下面的use捕获 
     const {phone, name}=req.body;
     if(phone&&name){
         db.query(`SELECT * FROM tb_user WHERE phone='${phone}'`,(err,data)=>{
@@ -79,6 +79,11 @@ router.use((req,res,next)=>{
     }
 })
 
-router.use('/',require('./common'));
+router.use('/',require('./getRound'));
+router.use('/',require('./getQuestion'));
+router.use('/',require('./commitAnswer'));
+router.use('/',require('./getResult'));
+router.use('/',require('./getRank'));
+
 
 module.exports=router;

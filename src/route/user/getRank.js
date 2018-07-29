@@ -1,0 +1,80 @@
+// 场次相关api
+const express=require('express');
+const router = express.Router();
+const moment = require('moment');
+const db = require('../../lib/util').db;
+const {sendErr, getPerAnsReward, query} = require('../../lib/util');
+
+// 获取排行版 (只显示今日场次)
+router.post('/getRank', async (req,res,next) => {
+    try {
+        const todayStartTimeStamp = new Date(new Date().toLocaleDateString()).getTime();  // 今天0点时间戳
+        const todayEndTimeStamp = todayStartTimeStamp+24*60*60*1000;                        // 第二天0点时间戳
+
+        const roundIdData = await query(`SELECT ID FROM tb_round WHERE time>${todayStartTimeStamp} AND time<${todayEndTimeStamp} ORDER BY time`);
+        var roundIds = roundIdData.map(item=>item.ID);
+        getPerAnsReward(req,res,next,roundIds); // 获取到了场次信息和每场次中每道题目的奖金
+
+    } catch (error) {
+        res.status(500).json({
+            error: {
+                message: '服务器发生错误'
+            }
+        })
+    }
+})
+router.post('/getRank',async (req,res) => {
+    const {userid, roundDataArr, perRewardArr}=req.body;
+    try {
+        var result = [];
+        var pros = roundDataArr.map((round,index) => {
+            return new Promise(async (resolve,reject)=>{
+                const userAnsData = await query(`SELECT userID,COUNT(userID) FROM tb_res WHERE roundID='${round.ID}' AND correct=1 GROUP BY userID`, res);
+                var userRank = [];
+                var pros = userAnsData.map(item => {
+                    return new Promise(async (innerResolve)=>{
+                        const userData = await query(`SELECT * FROM tb_user WHERE ID='${item.userID}'`, res);
+                        const count = item['COUNT(userID)'];
+                        userRank.push({
+                            name: userData[0].name,
+                            phone: userData[0].phone,
+                            answercount: count,
+                            reward: Math.round(count*perRewardArr[index])
+                        })
+                        innerResolve();
+                    })
+                });
+
+                Promise.all(pros).then(()=>{
+                    userRank.sort((item1,item2)=>item2.reward-item1.reward)
+                    result.push({
+                        roundName: round.title,
+                        time: round.time,
+                        userRank
+                    })
+                    resolve();
+                })
+            })
+        });
+
+        Promise.all(pros).then(()=>{
+            result.sort((item1,item2)=>{
+                return item1.time-item2.time   // 上面是异步操作，顺序不定，按时间排下序
+            })
+            res.json({
+                result
+            })
+            console.log(result)
+        })
+
+    } catch (error) {
+        console.log(error)
+        res.status(500).json({
+            error: {
+                message: '服务器发生错误'
+            }
+        })
+    }
+})
+
+module.exports=router;

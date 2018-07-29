@@ -81,13 +81,20 @@ router.post('/addRound',(req,res)=>{
 router.post('/updateRound',(req,res)=>{
     try {
         const {ID, title, reward, time}=req.body;
-        db.query(`UPDATE tb_round SET title='${title}',reward=${reward},time=${time} WHERE ID=${ID}`,(err,data)=>{
+
+        db.query(`DELETE FROM tb_res WHERE roundID='${ID}'`,(err,data)=>{   // 删除该场次历史答题记录
             if(err){
                 res.status(501).json({error: {message: '数据库查询失败，请检查参数'}})
             }else{
-                res.json({
-                    result: {message: '修改成功'}
-                })
+                db.query(`UPDATE tb_round SET title='${title}',reward=${reward},time=${time} WHERE ID=${ID}`,(err,data)=>{  // 更新题目
+                    if(err){
+                        res.status(501).json({error: {message: '数据库查询失败，请检查参数'}})
+                    }else{
+                        res.json({
+                            result: {message: '修改成功'}
+                        })
+                    }
+                });
             }
         });
     } catch (error) {
