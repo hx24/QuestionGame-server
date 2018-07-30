@@ -1,7 +1,8 @@
 // 场次相关api
 const express=require('express');
 const router = express.Router();
-const db = require('../../lib/util').db;
+const {db, query} = require('../../lib/util');
+
 
 // 获取场次列表
 router.post('/getRoundList',(req,res,next)=>{
@@ -78,25 +79,15 @@ router.post('/addRound',(req,res)=>{
 })
 
 // 修改场次
-router.post('/updateRound',(req,res)=>{
+router.post('/updateRound',async (req,res)=>{
     try {
         const {ID, title, reward, time}=req.body;
+        await query(`DELETE FROM tb_res WHERE roundID='${ID}'`,res);    // 删除该场次的答题记录
+        await query(`UPDATE tb_round SET title='${title}',reward=${reward},time=${time} WHERE ID=${ID}`,res);   // 修改
+        res.json({
+            result: {message: '修改成功'}
+        }).end();
 
-        db.query(`DELETE FROM tb_res WHERE roundID='${ID}'`,(err,data)=>{   // 删除该场次历史答题记录
-            if(err){
-                res.status(501).json({error: {message: '数据库查询失败，请检查参数'}})
-            }else{
-                db.query(`UPDATE tb_round SET title='${title}',reward=${reward},time=${time} WHERE ID=${ID}`,(err,data)=>{  // 更新题目
-                    if(err){
-                        res.status(501).json({error: {message: '数据库查询失败，请检查参数'}})
-                    }else{
-                        res.json({
-                            result: {message: '修改成功'}
-                        })
-                    }
-                });
-            }
-        });
     } catch (error) {
         res.status(500).json({
             error: {
@@ -108,18 +99,14 @@ router.post('/updateRound',(req,res)=>{
 
 
 // 删除场次
-router.post('/deleteRound',(req,res)=>{
+router.post('/deleteRound',async (req,res)=>{
     try {
         const {ID}=req.body;
-        db.query(`DELETE FROM tb_round WHERE ID=${ID}`,(err,data)=>{
-            if(err){
-                res.status(501).json({error: {message: '数据库查询失败，请检查参数'}})
-            }else{
-                res.json({
-                    result: {message: '删除成功'}
-                })
-            }
-        });
+        await query(`DELETE FROM tb_res WHERE roundID='${ID}'`, res);    // 删除该场次的答题记录
+        await query(`DELETE FROM tb_round WHERE ID=${ID}`, res);    // 删除场次
+        res.json({
+            result: {message: '删除成功'}
+        }).end();
     } catch (error) {
         res.status(500).json({
             error: {

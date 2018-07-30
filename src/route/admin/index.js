@@ -39,7 +39,6 @@ router.use('/login', (req,res)=>{      // 跨域的时候会先执行OPTIONS请�
 })
 
 router.use((req,res,next)=>{
-    console.log(req.session)
     if(!req.session['admin_id']){   // 没有登陆
         // res.redirect('/login')
         res.status(403).json({
@@ -54,5 +53,7 @@ router.use((req,res,next)=>{
 
 router.use('/',require('./round'));
 router.use('/',require('./question'));
+router.use('/',require('./user'));
+
 
 module.exports=router;

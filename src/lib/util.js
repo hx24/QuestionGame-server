@@ -42,46 +42,52 @@ function query(sql, res) {
     })
 }
 
-async function getPerAnsReward(req, res, next, roundId) { // 统计该场次每道题的奖金, 可传单个id或数组， 会将场次信息和奖金结果作为数组挂载在 req.body.perRewardArr
+
+/**
+ * 
+ * @param {String||Array[String]} roundId 
+ * @param {*} res
+ * 
+ * 返回场次的具体信息，其中增加了perReward字段，代表每道题分多少钱
+ */
+function getPerAnsReward(roundId, res) { // 统计该场次每道题的奖金, 可传单个id或数组， 会将场次信息和奖金结果作为数组挂载在 req.body.perRewardArr
     try {
-        var IDs = [];
-        if (Array.isArray(roundId)) {
-            IDs = roundId;
-        } else {
-            IDs.push(roundId)
-        }
-
-        var perRewardArr = [];
-        var roundDataArr = [];
-
-        var pros = IDs.map(id=>{
-            return new Promise(async (resolve,reject)=>{
-                const data = await query(`SELECT COUNT(ID) FROM tb_res WHERE roundID='${id}' AND correct=1`,res);
-                var count = data[0]['COUNT(ID)']; // 答对从题目数量
+        return new Promise(async (resolve)=>{
+            var IDs = [];
+            if (Array.isArray(roundId)) {
+                IDs = roundId;
+            } else {
+                IDs.push(roundId)
+            }
+            var roundDataArr = [];
+            var pros = IDs.map(id=>{
+                return new Promise(async (innerResolve,reject)=>{
+                    const data = await query(`SELECT COUNT(ID) FROM tb_res WHERE roundID='${id}' AND correct=1`,res);
+                    var count = data[0]['COUNT(ID)']; // 答对从题目数量
+        
+                    const roundData = await query(`SELECT * FROM tb_round WHERE ID='${id}'`,res);
+                    var perReward = roundData[0].reward;
+                    if (count != 0) {
+                        perReward /= count;
+                    }
+                    roundData[0].perReward = perReward;
+                    roundDataArr.push(roundData[0])
+                    innerResolve();
+                })
+            });
     
-                const roundData = await query(`SELECT * FROM tb_round WHERE ID='${id}'`,res);
-                roundDataArr.push(roundData[0])
-                var perReward = roundData[0].reward;
-                if (count != 0) {
-                    perReward /= count;
-                }
-                perRewardArr.push(perReward);
-                resolve();
+            Promise.all(pros).then(()=>{
+                roundDataArr.sort((item1,item2)=>item2.time-item1.time);
+                resolve(roundDataArr)
             })
-        });
-
-        Promise.all(pros).then(()=>{
-            req.body.roundDataArr = roundDataArr;
-            req.body.perRewardArr = perRewardArr;
-            next();
         })
-
+        
     } catch (error) {
-        // console.log(error)
+        console.log(error)
         res.status(500).json({
             error: {
                 message: '服务器发生错误'
             }
-        })
+        }).end();
     }
 }

@@ -1,9 +1,6 @@
-// 场次相关api
 const express=require('express');
 const router = express.Router();
-const moment = require('moment');
-const db = require('../../lib/util').db;
-const {sendErr, getPerAnsReward, query} = require('../../lib/util');
+const {getPerAnsReward, query} = require('../../lib/util');
 
 // 获取排行版 (返回前两天到当前时间的有排名的场次)
 router.post('/getRank', async (req,res,next) => {
@@ -14,7 +11,9 @@ router.post('/getRank', async (req,res,next) => {
 
         const roundIdData = await query(`SELECT ID FROM tb_round WHERE time>${startTime} AND time<${EndTime} ORDER BY time`);
         var roundIds = roundIdData.map(item=>item.ID);
-        getPerAnsReward(req,res,next,roundIds); // 获取到了场次信息和每场次中每道题目的奖金
+        const roundDataArr = await getPerAnsReward(roundIds, res); // 获取到了场次信息和每场次中每道题目的奖金
+        req.body.roundDataArr = roundDataArr;
+        next();
 
     } catch (error) {
         res.status(500).json({
@@ -25,7 +24,8 @@ router.post('/getRank', async (req,res,next) => {
     }
 })
 router.post('/getRank',async (req,res) => {
-    const {userid, roundDataArr, perRewardArr}=req.body;
+    const {userid, roundDataArr}=req.body;
+
     try {
         var result = [];
         var pros = roundDataArr.map((round,index) => {
@@ -40,7 +40,7 @@ router.post('/getRank',async (req,res) => {
                             name: userData[0].name,
                             phone: userData[0].phone,
                             answercount: count,
-                            reward: Math.round(count*perRewardArr[index])
+                            reward: Math.round(count * round.perReward)
                         })
                         innerResolve();
                     })
@@ -67,7 +67,6 @@ router.post('/getRank',async (req,res) => {
             res.json({
                 result
             })
-            console.log(result)
         })
 
     } catch (error) {
