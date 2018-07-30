@@ -5,13 +5,14 @@ const moment = require('moment');
 const db = require('../../lib/util').db;
 const {sendErr, getPerAnsReward, query} = require('../../lib/util');
 
-// 获取排行版 (只显示今日场次)
+// 获取排行版 (返回前两天到当前时间的有排名的场次)
 router.post('/getRank', async (req,res,next) => {
     try {
         const todayStartTimeStamp = new Date(new Date().toLocaleDateString()).getTime();  // 今天0点时间戳
-        const todayEndTimeStamp = todayStartTimeStamp+24*60*60*1000;                        // 第二天0点时间戳
+        const startTime = todayStartTimeStamp - 2*24*3600*1000;                     // 两天前
+        const EndTime = new Date().getTime();                          // 现在
 
-        const roundIdData = await query(`SELECT ID FROM tb_round WHERE time>${todayStartTimeStamp} AND time<${todayEndTimeStamp} ORDER BY time`);
+        const roundIdData = await query(`SELECT ID FROM tb_round WHERE time>${startTime} AND time<${EndTime} ORDER BY time`);
         var roundIds = roundIdData.map(item=>item.ID);
         getPerAnsReward(req,res,next,roundIds); // 获取到了场次信息和每场次中每道题目的奖金
 
@@ -46,12 +47,14 @@ router.post('/getRank',async (req,res) => {
                 });
 
                 Promise.all(pros).then(()=>{
-                    userRank.sort((item1,item2)=>item2.reward-item1.reward)
-                    result.push({
-                        roundName: round.title,
-                        time: round.time,
-                        userRank
-                    })
+                    if(userRank.length>0){
+                        userRank.sort((item1,item2)=>item2.reward-item1.reward)
+                        result.push({
+                            roundName: round.title,
+                            time: round.time,
+                            userRank
+                        })
+                    }
                     resolve();
                 })
             })
