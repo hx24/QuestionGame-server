@@ -16,3 +16,8 @@
 
 
 - 场次设定中的时间只能设定到分。
+
+
+- route/admin/round.js  line 182 undone
+
+- WHERE correct=1 改为 SUM(correct)
