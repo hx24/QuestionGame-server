@@ -172,5 +172,49 @@ router.post('/roundDetail',(req,res)=>{
     }
 })
 
+// 获取场次排行榜
+router.post('/getRank', async (req,res,next) => {
+    const { id, pageindex, pagesize } = req.body;
+    try {
+        const roundDataArr = await getPerAnsReward(id, res); // 获取到了场次信息和每场次中每道题目的奖金
+        const round = roundDataArr[0];
+
+        const allUserAnsData = await query(`SELECT userID,COUNT(userID) FROM tb_res WHERE roundID='${id}' AND correct=1 GROUP BY userID`, res);
+
+        var start = (pageindex-1)*pagesize;
+        const userAnsData = await query(`SELECT userID,COUNT(userID) FROM tb_res WHERE roundID='${id}' AND correct=1 GROUP BY userID ORDER BY COUNT(userID) LIMIT ${start},${pagesize}`, res);
+        var userRank = [];
+        var pros = userAnsData.map((item, index) => {
+            return new Promise(async (resolve)=>{
+                const userData = await query(`SELECT * FROM tb_user WHERE ID='${item.userID}'`, res);
+                const count = item['COUNT(userID)'];
+                userRank.push({
+                    rank: index+1 + start,    // 排名
+                    name: userData[0].name,
+                    phone: userData[0].phone,
+                    answercount: count,
+                    reward: Math.round(count * round.perReward)
+                })
+                resolve();
+            })
+        });
+
+        Promise.all(pros).then(()=>{
+            if(userRank.length>0){
+                userRank.sort((item1,item2)=>item2.reward-item1.reward)
+            }
+            res.json
+            
+        })
+
+    } catch (error) {
+        res.status(500).json({
+            error: {
+                message: '服务器发生错误'
+            }
+        })
+    }
+})
+
 
 module.exports=router;

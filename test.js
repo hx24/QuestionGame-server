@@ -1,5 +1,8 @@
 
 
-var arr = [];
+var arr = ['aaa','bbb','ccc'];
 
-console.log(arr.slice(0,3))
+const roundIDs = arr.map(item=>{
+    return `'item.roundID'`
+}).join(',')
+console.log(roundIDs)

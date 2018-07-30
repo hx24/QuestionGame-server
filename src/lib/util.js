@@ -19,7 +19,7 @@ module.exports = {
     getPerAnsReward,
 }
 
-function query(sql, res) {
+function query(sql, res, condition) {
     // 返回一个 Promise
     return new Promise((resolve, reject) => {
         db.getConnection(function(err, connection) {
@@ -27,7 +27,7 @@ function query(sql, res) {
                 reject(err)
                 res.status(501).json(err).end();
             } else {
-                connection.query(sql,  (err, rows) => {
+                connection.query(sql, condition, (err, rows) => {
                     if (err) {
                         reject(err)
                         res.status(501).json(err).end();

@@ -52,10 +52,60 @@ router.post('/deleteUser',async (req,res)=>{       // 获取今天内最近的�
 router.post('/editRevive',async (req,res)=>{       // 获取今天内最近的场次
     const {id, revive} = req.body;
     try {
-        await query(`UPDATE tb_user SET revive='${revive}' WHERE ID=${id}`);
+        await query(`UPDATE tb_user SET revive='${revive}' WHERE ID='${id}'`, res);
         res.json({
             result: {message: '修改成功'}
         }).end();
+    } catch (error) {
+        console.log(error)
+        res.status(500).json({
+            error: {
+                message: '服务器发生错误'
+            }
+        })
+    }
+})
+
+// 获取用户参加的场次信息
+router.post('/getUserRound',async (req,res)=>{       // 获取今天内最近的场次
+    const {id, pagesize, pageindex} = req.body;
+    try {
+        const allUserRoundData = await query(`SELECT roundID,SUM(correct) FROM tb_res WHERE userID='${id}' GROUP BY roundID`, res);   // 获取所有参加过的场次
+        const count = allUserRoundData.length;
+        const rightCountObj = {};
+        allUserRoundData.forEach(item=>{
+            rightCountObj[item.roundID] = item['SUM(correct)'];   // { 'sjdc12': 10 }
+        })
+
+        var start = (pageindex-1)*pagesize;
+        const roundIDs = allUserRoundData.map(item=>item.roundID).join(',')
+        if(!roundIDs){
+            res.json({
+                result: {
+                    count: 0,
+                    list: []
+                }
+            }).end()
+        }else{
+            const roundListData = await query(`SELECT * FROM tb_round WHERE ID IN (${roundIDs}) ORDER BY time DESC LIMIT ${start},${pagesize}`, res);
+            const ids = roundListData.map(item=>item.ID);
+            const roundDataArr = await getPerAnsReward(ids, res); // 获取到了场次信息和每场次中每道题目的奖金
+            const list = roundDataArr.map(item=>{
+                const rightCount =  rightCountObj[item.ID];
+                return {
+                    roundName: item.title,
+                    startTime: item.time,
+                    count: rightCount,
+                    reward: Math.round(rightCount*item.perReward)
+                }
+            })
+            res.json({
+                result: {
+                    count,
+                    list
+                }
+            }).end();
+        }
         
     } catch (error) {
         console.log(error)
@@ -69,14 +119,5 @@ router.post('/editRevive',async (req,res)=>{       // 获取今天内最近的�
 
 
 
+
 module.exports=router;
-
-
-var userList = [
-    {
-        "id": "asdc15",
-        "name": "",
-        "phone": 13176863291,
-        "revive": 5
-    }
-]
