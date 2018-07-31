@@ -2,7 +2,7 @@ const express=require('express');
 const router = express.Router();
 const db = require('../../lib/util').db;
 
-router.use('/login', (req,res)=>{      // 跨域的时候会先执行OPTIONS请求，若不设为use，第一个OPTIONS请求会被下面的use捕获
+router.post('/login', (req,res)=>{      // 跨域的时候会先执行OPTIONS请求，若不设为use，第一个OPTIONS请求会被下面的use捕获
     const {username, password}=req.body;
     if(username&&password){
         db.query(`SELECT * FROM tb_admin WHERE username='${username}' AND password='${password}'`,(err,data)=>{
@@ -37,6 +37,17 @@ router.use('/login', (req,res)=>{      // 跨域的时候会先执行OPTIONS请�
         }).end;
     }
 })
+
+router.use('/logout', (req,res)=>{
+    delete req.session['admin_id'];
+    res.json({
+        result: {
+            ok: true,
+            message: '退出成功'
+        }
+    })
+})
+
 
 router.use((req,res,next)=>{
     if(!req.session['admin_id']){   // 没有登陆

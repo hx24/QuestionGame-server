@@ -1,7 +1,7 @@
 // 场次相关api
 const express=require('express');
 const router = express.Router();
-const {db, query} = require('../../lib/util');
+const {db, query, getPerAnsReward} = require('../../lib/util');
 
 
 // 获取场次列表
@@ -173,21 +173,22 @@ router.post('/roundDetail',(req,res)=>{
 })
 
 // 获取场次排行榜
-router.post('/getRank', async (req,res,next) => {
+router.post('/getRank', async (req,res) => {
     const { id, pageindex, pagesize } = req.body;
     try {
         const roundDataArr = await getPerAnsReward(id, res); // 获取到了场次信息和每场次中每道题目的奖金
         const round = roundDataArr[0];
 
-        const allUserAnsData = await query(`SELECT userID,COUNT(userID) FROM tb_res WHERE roundID='${id}' AND correct=1 GROUP BY userID`, res);
+        const allUserAnsData = await query(`SELECT userID,COUNT(userID) FROM tb_res WHERE roundID='${id}' GROUP BY userID`, res);
+        const allCount = allUserAnsData.length;   // 参与答题的总人数
 
         var start = (pageindex-1)*pagesize;
-        const userAnsData = await query(`SELECT userID,COUNT(userID) FROM tb_res WHERE roundID='${id}' AND correct=1 GROUP BY userID ORDER BY COUNT(userID) LIMIT ${start},${pagesize}`, res);
+        const userAnsData = await query(`SELECT userID,SUM(correct) FROM tb_res WHERE roundID='${id}' GROUP BY userID ORDER BY SUM(correct) DESC LIMIT ${start},${pagesize}`, res);
         var userRank = [];
         var pros = userAnsData.map((item, index) => {
             return new Promise(async (resolve)=>{
                 const userData = await query(`SELECT * FROM tb_user WHERE ID='${item.userID}'`, res);
-                const count = item['COUNT(userID)'];
+                const count = item['SUM(correct)'];
                 userRank.push({
                     rank: index+1 + start,    // 排名
                     name: userData[0].name,
@@ -203,11 +204,17 @@ router.post('/getRank', async (req,res,next) => {
             if(userRank.length>0){
                 userRank.sort((item1,item2)=>item2.reward-item1.reward)
             }
-            res.json
+            res.json({
+                result: {
+                    count: allCount,
+                    list: userRank
+                }
+            })
             
         })
 
     } catch (error) {
+        console.log(error)
         res.status(500).json({
             error: {
                 message: '服务器发生错误'

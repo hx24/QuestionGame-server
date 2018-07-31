@@ -30,12 +30,12 @@ router.post('/getRank',async (req,res) => {
         var result = [];
         var pros = roundDataArr.map((round,index) => {
             return new Promise(async (resolve,reject)=>{
-                const userAnsData = await query(`SELECT userID,COUNT(userID) FROM tb_res WHERE roundID='${round.ID}' AND correct=1 GROUP BY userID`, res);
+                const userAnsData = await query(`SELECT userID,SUM(correct) FROM tb_res WHERE roundID='${round.ID}' GROUP BY userID`, res);
                 var userRank = [];
                 var pros = userAnsData.map(item => {
                     return new Promise(async (innerResolve)=>{
                         const userData = await query(`SELECT * FROM tb_user WHERE ID='${item.userID}'`, res);
-                        const count = item['COUNT(userID)'];
+                        const count = item['SUM(correct)'];
                         userRank.push({
                             name: userData[0].name,
                             phone: userData[0].phone,

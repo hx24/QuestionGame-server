@@ -32,12 +32,12 @@ router.post('/getRound',async (req,res,next)=>{       // 获取今天内最近�
 router.post('/getRound', async (req,res)=>{     // 获取历史记录
     const {userid}=req.body;
     try {
-        const userJoinedData = await query(`SELECT roundID,COUNT(roundID) FROM tb_res WHERE userID='${userid}' GROUP BY roundID`, res);
+        const userJoinedData = await query(`SELECT roundID,SUM(correct) FROM tb_res WHERE userID='${userid}' GROUP BY roundID`, res);
         const roundIDs = [];
         const userJoined = {};
         userJoinedData.forEach(item => {
             roundIDs.push(item.roundID);
-            userJoined[item.roundID] = item['COUNT(roundID)'];
+            userJoined[item.roundID] = item['SUM(correct)'];
         });
         const roundDataArr = await getPerAnsReward(roundIDs, res); // 获取到了参加过的场次信息和每场次中每道题目的奖金,按时间从大到小排序
         var rewardAll = 0;
