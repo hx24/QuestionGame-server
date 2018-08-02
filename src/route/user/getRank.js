@@ -36,9 +36,10 @@ router.post('/getRank',async (req,res) => {
                     return new Promise(async (innerResolve)=>{
                         const userData = await query(`SELECT * FROM tb_user WHERE ID='${item.userID}'`, res);
                         const count = item['SUM(correct)'];
+                        const handlePhone = userData[0].phone.substring(0,3)+'****'+userData[0].phone.substring(7,11);
                         userRank.push({
                             name: userData[0].name,
-                            phone: userData[0].phone,
+                            phone: handlePhone,
                             answercount: count,
                             reward: Math.round(count * round.perReward)
                         })
