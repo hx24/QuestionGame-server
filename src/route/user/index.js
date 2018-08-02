@@ -8,7 +8,7 @@ router.use('/login', async (req, res, next)=>{      // 跨域的时候会先执�
     try {
         // 微信登录
         if(code){
-            const wechatData = await getWecharOpenid(code);
+            const wechatData = await getWechatOpenid(code);
             if(wechatData.openid){  // 获取微信用户唯一标识(wechatID)成功
                 const wechatID = wechatData.openid;
                 const wechatUserData = await query(`SELECT * FROM tb_user WHERE wechatID='${wechatID}'`, res);
@@ -148,7 +148,7 @@ router.use('/',require('./getRank'));
 module.exports=router;
 
 
-function getWecharOpenid(code) {
+function getWechatOpenid(code) {
     var https  = require('https');
     var qs = require('querystring'); 
     var data = { 
