@@ -14,10 +14,10 @@ router.use('/login', async (req, res, next)=>{      // 跨域的时候会先执�
                 const wechatUserData = await query(`SELECT * FROM tb_user WHERE wechatID='${wechatID}'`, res);
                 if(wechatUserData.length>0){
                     // 该微信用户已注册，可以直接登录
+                    req.session['user_id']=wechatUserData[0].ID;
                     res.json({
                         result: {
                             message: '登陆成功',
-                            data: wechatUserData[0]
                         }
                     }).end();
                 }else if(!phone){
@@ -31,7 +31,6 @@ router.use('/login', async (req, res, next)=>{      // 跨域的时候会先执�
                     // 微信绑定手机号
                     // 检测该手机号是否已经注册过
                     const signedUserData = await query(`SELECT * FROM tb_user WHERE phone='${phone}'`, res);
-                console.log(signedUserData)
                     var userid = '';
                     if(signedUserData.length>0){
                         // 该手机号已注册过,直接进行绑定

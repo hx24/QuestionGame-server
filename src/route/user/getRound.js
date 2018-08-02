@@ -31,6 +31,7 @@ router.post('/getRound',async (req,res,next)=>{       // 获取今天内最近�
 })
 router.post('/getRound', async (req,res)=>{     // 获取历史记录
     const {userid}=req.body;
+    console.log(userid)
     try {
         const userJoinedData = await query(`SELECT roundID,SUM(correct) FROM tb_res WHERE userID='${userid}' GROUP BY roundID`, res);
         const roundIDs = [];
