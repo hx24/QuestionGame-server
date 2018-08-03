@@ -9,13 +9,14 @@ const db = require('../../lib/util').db;
 router.post('/getQuestion',(req,res,next)=>{             // 检查上一题是否答对
     const {userid, roundId, index}=req.body;
     try {
-        if(index===0){
+        if(index==0){
             next();
         }else{
             db.query(`SELECT * FROM tb_res WHERE roundID='${roundId}' AND questionIndex=${index-1} AND correct=1`,(err,data)=>{
                 if(err){
                     sendErr(res, 501, '数据库查询失败，请检查参数');
                 }else{
+                    console.log(data)
                     if(data.length==0){
                         res.json({
                             result: {
@@ -37,7 +38,7 @@ router.post('/getQuestion',(req,res,next)=>{             // 检查上一题是�
 router.post('/getQuestion',(req,res,next)=>{             // 检查上一题是否答对
     const {userid, roundId, index}=req.body;
     try {
-        if(index===0){
+        if(index==0){
             next();
         }else{
             db.query(`SELECT * FROM tb_res WHERE userID='${userid}' AND roundID='${roundId}' AND questionIndex=${index-1}`,(err,data)=>{
@@ -46,6 +47,7 @@ router.post('/getQuestion',(req,res,next)=>{             // 检查上一题是�
                 }else{
                     if (data.length===0||!data[0].correct){
                         req.body.cant=true;
+                        req.body.message='上一题未答对'
                     }
                     next();
                 }
@@ -75,8 +77,9 @@ router.post('/getQuestion',(req,res,next)=>{         // 获取场次信息,根�
                         }
                     })
                 }else{
-                    if(timeDis>(index*28 + 2)*1000 ){   // 距该题发布已超过5s
+                    if(timeDis>(index*28 + 2)*1000 ){   // 距该题发布已超过2s
                         req.body.cant=true;
+                        req.body.message='距该题发布已超过2s'
                     }
                     next();
                 }
@@ -112,12 +115,13 @@ router.post('/getQuestion',(req,res,next)=>{         // 该题目已到放题时
                     res.json({
                         result: {
                             roundId,
-                            questionindex: index+1,
+                            questionindex: Number.parseInt(index)+1,
                             questionid: question.ID,
                             question: question.question,
                             startsecond: 10,   // 倒计时时间，暂定10s
                             isanswer: !req.body.cant,   // 是否可以答题
-                            answers: [question.answer0, question.answer1, question.answer2, question.answer3]
+                            answers: [question.answer0, question.answer1, question.answer2, question.answer3],
+                            message: req.body.message||''
                         }
                     })
                 }
