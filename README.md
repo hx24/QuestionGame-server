@@ -1,8 +1,6 @@
-# questionHero
-答题英雄项目
+# QuestionGame-server
+> 趣味问答项目-server  
 
+- 使用node+express+mysql
 
-10s答题时间
-2s后出结果
-10s时间看统计
-5秒等待请求题目(rest)
+- 运行前先全局安装supervisor

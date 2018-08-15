@@ -12,7 +12,11 @@ router.post('/getUserList',async (req,res,next)=>{       // 获取今天内最�
         const allUserData = await query(`SELECT ID FROM tb_user`, res);
         const count = allUserData.length;
         var start = (pageindex-1)*pagesize;
-        const usersData = await query(`SELECT * FROM tb_user ORDER BY name LIMIT ${start},${pagesize}`, res);
+        const usersData = await query(`SELECT * FROM tb_user ORDER BY phone LIMIT ${start},${pagesize}`, res);
+        console.log(usersData)
+        usersData.forEach(user=>{
+            if(!user.name)user.name = user.wechatName;
+        })
         res.json({
             result: {
                 count,

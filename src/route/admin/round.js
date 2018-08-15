@@ -191,7 +191,7 @@ router.post('/getRank', async (req,res) => {
                 const count = item['SUM(correct)'];
                 userRank.push({
                     rank: index+1 + start,    // 排名
-                    name: userData[0].name,
+                    name: userData[0].name||userData[0].wechatName,
                     phone: userData[0].phone,
                     answercount: count,
                     reward: Math.round(count * round.perReward)
